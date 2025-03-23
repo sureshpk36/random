@@ -1,0 +1,80 @@
+/*
+ * This is the code for the Arduino side that will read from your sensors
+ * and send the data to the ESP8266 via Serial communication.
+ */
+
+// Include any libraries for your specific sensors
+// #include <DFRobot_PH.h>
+// #include <OneWire.h>
+// #include <DallasTemperature.h>
+
+// Define pins for sensors
+#define TDS_PIN A1
+#define PH_PIN A0
+#define TURBIDITY_PIN A2
+#define TEMP_PIN A3
+#define CONDUCTIVITY_PIN A4
+
+// Variables to store sensor readings
+float ph = 7.2;
+float tds = 145.0;
+float turbidity = 2.1;
+float temperature = 23.0;
+float conductivity = 410.0;
+
+void setup() {
+  Serial.begin(9600);  // Start serial communication with ESP8266
+  
+  // Initialize your sensors here
+  // ...
+  
+  Serial.println("Water Quality Monitoring System Started");
+}
+
+void loop() {
+  // Read sensor values
+  readSensors();
+  
+  // Format data to send to ESP8266
+  String sensorData = "PH:" + String(ph, 1) + ";";
+  sensorData += "TDS:" + String(tds, 1) + ";";
+  sensorData += "TURB:" + String(turbidity, 1) + ";";
+  sensorData += "TEMP:" + String(temperature, 1) + ";";
+  sensorData += "COND:" + String(conductivity, 1);
+  
+  // Send data to ESP8266
+  Serial.println(sensorData);
+  
+  // Wait before next reading
+  delay(2000);
+}
+
+void readSensors() {
+  // Replace these with actual sensor reading code
+  
+  // Example for reading pH sensor
+  // int rawPh = analogRead(PH_PIN);
+  // ph = map(rawPh, 0, 1023, 0, 14);
+  
+  // Example for reading TDS sensor
+  // int rawTds = analogRead(TDS_PIN);
+  // tds = rawTds * 0.5;
+  
+  // Example for reading turbidity sensor
+  // int rawTurbidity = analogRead(TURBIDITY_PIN);
+  // turbidity = map(rawTurbidity, 0, 1023, 0, 10);
+  
+  // Example for reading temperature sensor
+  // temperature = sensors.getTempCByIndex(0);
+  
+  // Example for reading conductivity sensor
+  // int rawConductivity = analogRead(CONDUCTIVITY_PIN);
+  // conductivity = rawConductivity * 1.0;
+  
+  // For testing, generate slightly varying values
+  ph = 6.8 + (random(0, 20) / 10.0);
+  tds = 140.0 + random(0, 30);
+  turbidity = 1.5 + (random(0, 15) / 10.0);
+  temperature = 22.0 + (random(0, 30) / 10.0);
+  conductivity = 400.0 + random(0, 50);
+}
