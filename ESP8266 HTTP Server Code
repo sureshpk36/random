@@ -1,0 +1,189 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ArduinoJson.h>
+
+// WiFi credentials
+const char* ssid = "YourWiFiSSID";       // Replace with your WiFi network name
+const char* password = "YourWiFiPassword"; // Replace with your WiFi password
+
+ESP8266WebServer server(80);  // Create web server on port 80
+
+// Sensor data variables
+float phValue = 7.2;
+float tdsValue = 145.0;
+float turbidityValue = 2.1;
+float temperatureValue = 23.0;
+float conductivityValue = 410.0;
+
+// Last update timestamp
+unsigned long lastSerialUpdate = 0;
+
+void setup() {
+  Serial.begin(9600);  // Start serial communication with Arduino
+  
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  Serial.println("\nConnecting to WiFi");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  
+  Serial.println("\nWiFi Connected");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());  // Print the IP address to connect to
+  
+  // Define API endpoints
+  server.on("/status", HTTP_GET, handleStatus);
+  server.on("/ph", HTTP_GET, handlePh);
+  server.on("/tds", HTTP_GET, handleTds);
+  server.on("/turbidity", HTTP_GET, handleTurbidity);
+  server.on("/temperature", HTTP_GET, handleTemperature);
+  server.on("/conductivity", HTTP_GET, handleConductivity);
+  
+  // Start the server
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  // Handle client requests
+  server.handleClient();
+  
+  // Read data from Arduino if available
+  if (Serial.available() > 0) {
+    String data = Serial.readStringUntil('\n');
+    parseArduinoData(data);
+    lastSerialUpdate = millis();
+  }
+  
+  // Generate simulated data if no updates from Arduino for 10 seconds
+  // This is just for testing without an Arduino connected
+  if (millis() - lastSerialUpdate > 10000) {
+    generateSimulatedData();
+    lastSerialUpdate = millis();
+  }
+}
+
+// Parse data coming from Arduino
+// Expected format: "PH:7.2;TDS:145;TURB:2.1;TEMP:23;COND:410"
+void parseArduinoData(String data) {
+  Serial.println("Received data: " + data);
+  
+  int phIndex = data.indexOf("PH:");
+  int tdsIndex = data.indexOf("TDS:");
+  int turbIndex = data.indexOf("TURB:");
+  int tempIndex = data.indexOf("TEMP:");
+  int condIndex = data.indexOf("COND:");
+  
+  if (phIndex >= 0) {
+    int endIndex = data.indexOf(';', phIndex);
+    if (endIndex < 0) endIndex = data.length();
+    phValue = data.substring(phIndex + 3, endIndex).toFloat();
+  }
+  
+  if (tdsIndex >= 0) {
+    int endIndex = data.indexOf(';', tdsIndex);
+    if (endIndex < 0) endIndex = data.length();
+    tdsValue = data.substring(tdsIndex + 4, endIndex).toFloat();
+  }
+  
+  if (turbIndex >= 0) {
+    int endIndex = data.indexOf(';', turbIndex);
+    if (endIndex < 0) endIndex = data.length();
+    turbidityValue = data.substring(turbIndex + 5, endIndex).toFloat();
+  }
+  
+  if (tempIndex >= 0) {
+    int endIndex = data.indexOf(';', tempIndex);
+    if (endIndex < 0) endIndex = data.length();
+    temperatureValue = data.substring(tempIndex + 5, endIndex).toFloat();
+  }
+  
+  if (condIndex >= 0) {
+    int endIndex = data.indexOf(';', condIndex);
+    if (endIndex < 0) endIndex = data.length();
+    conductivityValue = data.substring(condIndex + 5, endIndex).toFloat();
+  }
+  
+  Serial.println("Updated values:");
+  Serial.println("pH: " + String(phValue));
+  Serial.println("TDS: " + String(tdsValue));
+  Serial.println("Turbidity: " + String(turbidityValue));
+  Serial.println("Temperature: " + String(temperatureValue));
+  Serial.println("Conductivity: " + String(conductivityValue));
+}
+
+// Generate random data for testing
+void generateSimulatedData() {
+  phValue = 6.8 + (random(0, 20) / 10.0);
+  tdsValue = 140.0 + random(0, 30);
+  turbidityValue = 1.5 + (random(0, 15) / 10.0);
+  temperatureValue = 22.0 + (random(0, 30) / 10.0);
+  conductivityValue = 400.0 + random(0, 50);
+  
+  Serial.println("Generated simulated data");
+}
+
+// Handler functions for each endpoint
+void handleStatus() {
+  DynamicJsonDocument doc(128);
+  doc["status"] = "online";
+  doc["uptime"] = millis() / 1000;
+  
+  String response;
+  serializeJson(doc, response);
+  
+  server.send(200, "application/json", response);
+}
+
+void handlePh() {
+  DynamicJsonDocument doc(64);
+  doc["value"] = phValue;
+  
+  String response;
+  serializeJson(doc, response);
+  
+  server.send(200, "application/json", response);
+}
+
+void handleTds() {
+  DynamicJsonDocument doc(64);
+  doc["value"] = tdsValue;
+  
+  String response;
+  serializeJson(doc, response);
+  
+  server.send(200, "application/json", response);
+}
+
+void handleTurbidity() {
+  DynamicJsonDocument doc(64);
+  doc["value"] = turbidityValue;
+  
+  String response;
+  serializeJson(doc, response);
+  
+  server.send(200, "application/json", response);
+}
+
+void handleTemperature() {
+  DynamicJsonDocument doc(64);
+  doc["value"] = temperatureValue;
+  
+  String response;
+  serializeJson(doc, response);
+  
+  server.send(200, "application/json", response);
+}
+
+void handleConductivity() {
+  DynamicJsonDocument doc(64);
+  doc["value"] = conductivityValue;
+  
+  String response;
+  serializeJson(doc, response);
+  
+  server.send(200, "application/json", response);
+}
